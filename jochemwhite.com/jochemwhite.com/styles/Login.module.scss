@@ -1,0 +1,42 @@
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgb(2, 0, 36);
+  background: linear-gradient(
+    90deg,
+    rgba(2, 0, 36, 1) 0%,
+    rgba(9, 9, 121, 1) 35%,
+    rgba(0, 212, 255, 1) 100%
+  );
+
+  height: 88vh;
+}
+
+.action {
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 1);
+  padding: 4rem;
+  border-radius: 15px;
+
+  h3 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 10px;
+    margin-bottom: 1rem;
+  }
+}
+.iconContainer{
+  margin-top: 1rem;
+}
+
+.icon{
+  margin-top: 1rem;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: white
+}

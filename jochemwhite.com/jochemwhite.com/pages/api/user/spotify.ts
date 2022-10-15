@@ -1,0 +1,109 @@
+import { getCookie } from "cookies-next";
+import connect from "../../../lib/database";
+import Spotify from "../../../models/Spotify";
+import jwt from "jsonwebtoken";
+
+import type { NextApiRequest, NextApiResponse } from "next";
+import axios, { Axios, AxiosError, AxiosResponse } from "axios";
+
+type Data = {
+  message: string;
+  user?: {
+    twitchID: number;
+    username: string;
+    email: string;
+  },
+  token?: string;
+};
+
+interface JwtPayload {
+  id: string;
+}
+
+export default async (req: NextApiRequest, res: NextApiResponse<Data>) => {
+  connect();
+  const SpotifyToken: any = getCookie("spotifycookie", { req, res });
+
+  //if we dont have cookies
+  if (!SpotifyToken) {
+    res.status(401).json({ message: "not authorized" });
+    return;
+  }
+
+  const Spotifyverified = jwt.verify(
+    SpotifyToken,
+    process.env.JWT_SECRET
+  ) as JwtPayload;
+
+  const Sportifyobj = await Spotify.findOne({ _id: Spotifyverified.id });
+
+  if (!Sportifyobj) {
+    res.status(401).json({
+      message: "not authorized",
+    });
+    return;
+  }
+
+  let accessToken = Sportifyobj.accessToken;
+  let refreshToken = Sportifyobj.refreshToken;
+
+  let user = await userData(accessToken);
+
+  if (user.error) {
+    let newTokens = await refreshaccessToken(refreshToken);
+    await Spotify.findOneAndUpdate(
+      { _id: Spotifyverified.id },
+      {
+        accessToken: newTokens.access_token,
+        refreshToken: newTokens.refresh_token,
+      }
+    );
+
+    accessToken = newTokens.access_token;
+    refreshToken = newTokens.refresh_token;
+    user = await userData(newTokens.access_token);
+  }
+
+  res.status(200).json({ message: "success", user: user, token: accessToken });
+};
+
+async function userData(accessToken: string) {
+  try {
+    let res: AxiosResponse = await axios.get("https://api.spotify.com/v1/me", {
+      headers: {
+        Authorization: "Bearer " + accessToken,
+      },
+    });
+    return res.data;
+  } catch (err: any) {
+    return err.response.data;
+  }
+}
+
+async function refreshaccessToken(refreshToken: string) {
+  const URL = "https://accounts.spotify.com/api/token";
+
+  const basic = Buffer.from(
+    `${process.env.SPOTIFY_CLIENT_ID}:${process.env.SPOTIFY_CLIENT_SECRET}`
+  ).toString("base64");
+  // header paremeter
+  const config = {
+    headers: {
+      Authorization: `Basic ${basic}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  };
+  // request body parameter
+  const data = new URLSearchParams([
+    ["grant_type", "refresh_token"],
+    ["refresh_token", refreshToken],
+  ]).toString();
+
+  try {
+    let res: AxiosResponse = await axios.post(URL, data, config);
+
+    return res.data;
+  } catch (err: any) {
+    return err.response;
+  }
+}
