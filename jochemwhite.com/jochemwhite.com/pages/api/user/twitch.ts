@@ -1,10 +1,11 @@
-import { getCookie } from "cookies-next";
+import { CookieValueTypes, getCookie } from "cookies-next";
 import connect from "../../../lib/database";
-import Twitch from "../../../models/Twitch";
 import jwt from "jsonwebtoken";
 import { NextApiHandler } from "next";
+import prisma from "../../../lib/database";
 
 import type { NextApiRequest, NextApiResponse } from "next";
+import { Cookies } from "next/dist/server/web/spec-extension/cookies";
 
 type Data = {
   message: string;
@@ -22,7 +23,6 @@ interface JwtPayload {
 }
 
 export default async (req: NextApiRequest, res: NextApiResponse<Data>) => {
-  connect();
   const TwitchToken: any = getCookie("twitchcookie", { req, res });
 
   // console.log(TwitchToken);
@@ -32,12 +32,20 @@ export default async (req: NextApiRequest, res: NextApiResponse<Data>) => {
     return;
   }
 
-  const Twitchverified = jwt.verify(
-    TwitchToken,
-    process.env.JWT_SECRET
-  ) as JwtPayload;
+  const Twitchverified = jwt.verify(TwitchToken, process.env.JWT_SECRET) as any;
 
-  const Twitchobj = await Twitch.findOne({ _id: Twitchverified.id });
+
+  
+  const Twitchobj = await prisma.user.findFirst({
+    where: {
+      id: Twitchverified.id
+    },
+    include: {
+      twitch: true,
+    },
+  });
+
+  console.log(`in user file ${Twitchobj}`);
 
   if (!Twitchobj) {
     res.status(401).json({
@@ -46,15 +54,16 @@ export default async (req: NextApiRequest, res: NextApiResponse<Data>) => {
     return;
   }
 
+  prisma.$disconnect()
 
   res.status(200).json({
-    message: "authorized",
+    message: 'authorized',
     user: {
-      twitchID: Twitchobj.TwitchID,
-      username: Twitchobj.name,
-      email: Twitchobj.email,
-      accessToken: Twitchobj.accessToken,
-      refreshToken: Twitchobj.refreshToken,
-    },
-  });
+      twitchID: Twitchobj!.twitch.twitchID,
+      username: Twitchobj!.twitch.displayName,
+      email: Twitchobj!.twitch.email,
+      accessToken: Twitchobj!.twitch.accessToken,
+      refreshToken: Twitchobj!.twitch.refreshToken
+    }
+  })
 };

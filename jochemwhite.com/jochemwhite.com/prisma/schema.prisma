@@ -1,0 +1,49 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  JWT       JWT?      @relation(fields: [JWTId], references: [id])
+  JWTId     String?
+  twitch    Twitch   @relation(fields: [twitchId], references: [id])
+  twitchId  String    
+  spotify   Spotify? @relation(fields: [spotifyId], references: [id])
+  spotifyId String?
+}
+
+model JWT {
+  id   String @id @default(uuid())
+  twitch  String? @unique @db.VarChar(200)
+  spotify  String? @unique @db.VarChar(200)
+  User User[]
+}
+
+model Twitch {
+  id           String @id @default(uuid())
+  twitchID     Int    @unique
+  displayName  String
+  email        String
+  accessToken  String
+  refreshToken String
+  User         User[]
+}
+
+model Spotify {
+  id           String @id @default(uuid())
+  spotifyID    Int    @unique
+  displayName  String
+  email        String
+  accessToken  String
+  refreshToken String
+  User         User[]
+}

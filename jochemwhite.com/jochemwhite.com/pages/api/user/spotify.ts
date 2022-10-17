@@ -1,18 +1,16 @@
 import { getCookie } from "cookies-next";
-import connect from "../../../lib/database";
-import Spotify from "../../../models/Spotify";
 import jwt from "jsonwebtoken";
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios, { Axios, AxiosError, AxiosResponse } from "axios";
-
+import prisma from "@/lib/database";
 type Data = {
   message: string;
   user?: {
     twitchID: number;
     username: string;
     email: string;
-  },
+  };
   token?: string;
 };
 
@@ -21,7 +19,6 @@ interface JwtPayload {
 }
 
 export default async (req: NextApiRequest, res: NextApiResponse<Data>) => {
-  connect();
   const SpotifyToken: any = getCookie("spotifycookie", { req, res });
 
   //if we dont have cookies
@@ -35,7 +32,14 @@ export default async (req: NextApiRequest, res: NextApiResponse<Data>) => {
     process.env.JWT_SECRET
   ) as JwtPayload;
 
-  const Sportifyobj = await Spotify.findOne({ _id: Spotifyverified.id });
+  const Sportifyobj = await prisma.user.findUnique({
+    where: {
+      id: Spotifyverified.id,
+    },
+    include:{
+      spotify: true
+    }
+  });
 
   if (!Sportifyobj) {
     res.status(401).json({
@@ -44,20 +48,26 @@ export default async (req: NextApiRequest, res: NextApiResponse<Data>) => {
     return;
   }
 
-  let accessToken = Sportifyobj.accessToken;
-  let refreshToken = Sportifyobj.refreshToken;
+  let accessToken = Sportifyobj.spotify!.accessToken;
+  let refreshToken = Sportifyobj.spotify!.refreshToken;
 
   let user = await userData(accessToken);
 
   if (user.error) {
     let newTokens = await refreshaccessToken(refreshToken);
-    await Spotify.findOneAndUpdate(
-      { _id: Spotifyverified.id },
-      {
-        accessToken: newTokens.access_token,
-        refreshToken: newTokens.refresh_token,
+    await prisma.user.update({
+      where: {
+        id: Sportifyobj.id
+      },
+      data: {
+        spotify:{
+          update:{
+            accessToken: newTokens.access_token,
+            refreshToken: newTokens.refresh_token
+          }
+        }
       }
-    );
+    })
 
     accessToken = newTokens.access_token;
     refreshToken = newTokens.refresh_token;

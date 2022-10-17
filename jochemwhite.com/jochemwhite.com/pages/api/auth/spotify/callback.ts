@@ -1,6 +1,6 @@
 import { setCookie } from "cookies-next";
 import passport from "passport";
-import "../../../../lib/passpor";
+import "../../../../lib/passport";
 import connect from "../../../../lib/database";
 import next, { NextApiRequest, NextApiResponse } from "next";
 import { NextIncomingMessage } from "next/dist/server/request-meta";
@@ -10,7 +10,6 @@ export default async function (
   res: NextApiResponse,
   next: NextIncomingMessage
 ) {
-  await connect();
   passport.authenticate("spotify", (err, user, info) => {
     if (err || !user) {
       console.log(err);

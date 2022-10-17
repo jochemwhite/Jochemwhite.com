@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse, } from 'next'
 import passport from "passport"
-import "../../../../lib/passpor"
+import "../../../../lib/passport"
 // import connect from "@lib/database"
 
 
