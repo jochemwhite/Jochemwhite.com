@@ -11,39 +11,60 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  JWT       JWT?      @relation(fields: [JWTId], references: [id])
-  JWTId     String?
-  twitch    Twitch   @relation(fields: [twitchId], references: [id])
-  twitchId  String    
-  spotify   Spotify? @relation(fields: [spotifyId], references: [id])
-  spotifyId String?
+  id      String   @id @default(uuid())
+  name    String
+  JWT     JWT?
+  twitch  Twitch?
+  spotify Spotify?
 }
 
 model JWT {
-  id   String @id @default(uuid())
+  id      String  @id @default(uuid())
   twitch  String? @unique @db.VarChar(200)
-  spotify  String? @unique @db.VarChar(200)
-  User User[]
+  spotify String? @unique @db.VarChar(200)
+  User    User    @relation(fields: [userId], references: [id])
+  userId  String  @unique @default(uuid())
 }
 
 model Twitch {
-  id           String @id @default(uuid())
-  twitchID     Int    @unique
+  id           String   @id @default(uuid())
+  twitchID     Int      @unique
   displayName  String
   email        String
   accessToken  String
   refreshToken String
-  User         User[]
+  IRC          Boolean  @default(false)
+  User         User     @relation(fields: [userId], references: [id])
+  userId       String   @unique @default(uuid())
+  
+  queue        Queue[]
 }
 
 model Spotify {
   id           String @id @default(uuid())
-  spotifyID    Int    @unique
+  spotifyID    String @unique
   displayName  String
   email        String
-  accessToken  String
+  accessToken  String @unique @db.VarChar(350)
   refreshToken String
-  User         User[]
+  User         User   @relation(fields: [userId], references: [id])
+  userId       String @unique @default(uuid())
+
+}
+
+model Queue {
+  id          String   @id @default(uuid())
+  channelID   Int
+  channelName String
+  spotifyId   String
+  song        String
+  songID      String
+  artists     String
+  requestedBy String
+  duration    Int
+  uri         String
+  image       String
+  addedAt     DateTime
+  Twitch      Twitch   @relation(fields: [twitchId], references: [id])
+  twitchId    String
 }

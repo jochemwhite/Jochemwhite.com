@@ -7,6 +7,6 @@ declare namespace NodeJS {
     DB_URL: string;
     DB_NAME?: string;
     JWT_SECRET: string;
-    MONGODB_URI: string;
+    BACKEND_SERVER: string
   }
 }

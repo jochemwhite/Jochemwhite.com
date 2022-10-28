@@ -36,9 +36,9 @@ export default async (req: NextApiRequest, res: NextApiResponse<Data>) => {
     where: {
       id: Spotifyverified.id,
     },
-    include:{
-      spotify: true
-    }
+    include: {
+      spotify: true,
+    },
   });
 
   if (!Sportifyobj) {
@@ -55,19 +55,22 @@ export default async (req: NextApiRequest, res: NextApiResponse<Data>) => {
 
   if (user.error) {
     let newTokens = await refreshaccessToken(refreshToken);
-    await prisma.user.update({
+    let test = await prisma.user.update({
       where: {
-        id: Sportifyobj.id
+        id: Sportifyobj.id,
       },
       data: {
-        spotify:{
-          update:{
+        spotify: {
+          update: {
             accessToken: newTokens.access_token,
-            refreshToken: newTokens.refresh_token
-          }
-        }
+            refreshToken: newTokens.refresh_token,
+          },
+        },
+      },
+      include:{
+        spotify:true
       }
-    })
+    });
 
     accessToken = newTokens.access_token;
     refreshToken = newTokens.refresh_token;

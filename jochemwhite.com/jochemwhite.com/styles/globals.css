@@ -1,10 +1,37 @@
-*{
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  
+
+  font-family: "Noto Sans", sans-serif;
 }
-body{
-  font-family: 'Poppins', sans-serif;
+body {
+  font-family: "Poppins", sans-serif;
   position: relative;
+  color: #fff;
+  background-color: #171e31;
+}
+
+/* GRID */
+
+.full_col {
+  grid-column: span 6;
+}
+
+.box {
+  grid-row: span 3;
+}
+
+.welcome {
+  grid-column: span 2;
+  grid-row: span 3;
+}
+.statistics {
+  grid-column: span 4;
+  grid-row: span 3;
+}
+
+.report {
+  grid-column: span 4;
+  grid-row: span 6;
 }

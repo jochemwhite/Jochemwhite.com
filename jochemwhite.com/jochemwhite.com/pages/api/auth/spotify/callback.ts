@@ -12,7 +12,6 @@ export default async function (
 ) {
   passport.authenticate("spotify", (err, user, info) => {
     if (err || !user) {
-      console.log(err);
       return res.redirect("http://localhost:3000/?a=auth_fail");
     }
 
@@ -21,6 +20,6 @@ export default async function (
       req,
       res,
     });
-    res.redirect("http://localhost:3000");
+    res.status(200).redirect("http://localhost:3000");
   })(req, res, next);
 }

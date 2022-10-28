@@ -8,7 +8,7 @@ export default async function handler(
   //create database connection
   //redriect user to twitch auth with scopes
   passport.authenticate("spotify", {
-    scope: ["user-read-email", "user-read-private", "streaming", "user-modify-playback-state"],
+    scope: ["user-read-email", "user-read-private", "streaming", "user-modify-playback-state", "user-read-currently-playing"],
     session: false,
   })(req, res);
 }

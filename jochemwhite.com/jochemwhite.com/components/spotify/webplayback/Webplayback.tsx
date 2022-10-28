@@ -22,7 +22,7 @@ const track = {
 };
 
 function WebPlayback() {
-  const { Spotify } = useContext(AuthContext);
+  const { Spotify, trackSet } = useContext(AuthContext);
   const [is_paused, setPaused] = useState<any>(false);
   const [is_active, setActive] = useState<any>(false);
   const [player, setPlayer] = useState<any>(undefined);
@@ -44,6 +44,15 @@ function WebPlayback() {
     });
   }
 
+  async function removeQueue(trackID: string) {
+    await axios.post("/api/spotify/queue/remove", {
+      trackID: trackID,
+      SpotifyID: Spotify.SpotifyID,
+    });
+
+    trackSet();
+  }
+
   useEffect(() => {
     const script = document.createElement("script") as any;
     script.src = "https://sdk.scdn.co/spotify-player.js";
@@ -53,7 +62,7 @@ function WebPlayback() {
 
     (window as any).onSpotifyWebPlaybackSDKReady = () => {
       const player = new (window as any).Spotify.Player({
-        name: "Web Playback SDK",
+        name: "Jochemwhite.com",
         getOAuthToken: (cb: any) => {
           cb(Spotify.accessToken);
         },
@@ -63,14 +72,11 @@ function WebPlayback() {
       setPlayer(player);
 
       player.addListener("ready", ({ device_id }: any) => {
-        console.log("Ready with Device ID", device_id);
         setDeviceID(device_id);
         setLoading(false);
       });
 
-      player.addListener("not_ready", ({ device_id }: any) => {
-        console.log("Device ID has gone offline", device_id);
-      });
+      player.addListener("not_ready", ({ device_id }: any) => {});
 
       player.addListener(
         "player_state_changed",
@@ -111,17 +117,16 @@ function WebPlayback() {
     if (song === current_track.id) {
     } else {
       setSong(current_track.id);
-      console.log("new song");
-      // removefromQueue(current_track.id);
+      removeQueue(current_track.id);
     }
+
+
 
     return (
       <>
-        <div className={s.container}>
+        <div className={s.container} style={{backgroundImage: `url(${current_track.album.images[0].url})` }}>
           <div className={s.nowPlaying}>
-            <div className={s.cover}>
-              <img src={current_track.album.images[0].url} alt="Album" />
-            </div>
+            <div className={s.cover}></div>
             <div className={s.info}>
               <div className={s.title}>{current_track.name}</div>
               <div className={s.artist}>{current_track.artists[0].name}</div>
@@ -151,7 +156,6 @@ function WebPlayback() {
             <button className={s.control} onClick={() => player.nextTrack()}>
               <FontAwesomeIcon icon={faStepForward} />
             </button>
-            
           </div>
         </div>
       </>

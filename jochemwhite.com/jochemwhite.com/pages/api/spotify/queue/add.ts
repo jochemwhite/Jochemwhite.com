@@ -1,9 +1,8 @@
 import axios from "axios";
 import { getCookie } from "cookies-next";
-import Spotify from "models/Spotify";
 import { NextApiRequest, NextApiResponse } from "next";
-import { Cookies } from "next/dist/server/web/spec-extension/cookies";
 import jwt from "jsonwebtoken";
+import prisma from "@/lib/database";
 
 interface JwtPayload {
   id: string;
@@ -23,25 +22,32 @@ export default async function <NextApiHandler>(
   ) as JwtPayload;
 
   //fetch accestoken from database
-  let db = await Spotify.findOne({ _id: Spotifyverified.id });
+  let db = await prisma.user.findUnique({
+    where: {
+      id: Spotifyverified.id,
+    },
+    include: {
+      spotify: true,
+      twitch: true,
+    },
+  });
+
+  let accessToken = db!.spotify!.accessToken;
 
   //add song to queue
-  let response: boolean = await addtoQueue(db!.accessToken, trackID);
+  let response: boolean = await addtoQueue(accessToken, trackID);
 
-  if(!response){
+  if (!response) {
     res.status(500).send("error");
   }
 
   //get song info
-  let songInfo = await info(db!.accessToken, trackID);
-
+  let songInfo = await info(accessToken, trackID);
 
   //add song to database
-  await addtoDB(songInfo, Spotifyverified.id);
+  await addtoDB(songInfo, db);
 
   res.status(200).send("success");
-
-
 }
 
 //add song to queue
@@ -56,10 +62,8 @@ async function addtoQueue(accessToken: string, trackID: string) {
         },
       }
     );
-    console.log(response);
     return true;
   } catch (err: any) {
-    console.log(err.response.data);
     return false;
   }
 }
@@ -68,36 +72,36 @@ async function addtoQueue(accessToken: string, trackID: string) {
 async function info(accessToken: string, trackID: string) {
   let id = trackID.split(":")[2];
   try {
-    let response = await axios.get(
-      `https://api.spotify.com/v1/tracks/${id}`,
-      {
-        headers: {
-          Authorization: "Bearer " + accessToken,
-        },
-      }
-    );
+    let response = await axios.get(`https://api.spotify.com/v1/tracks/${id}`, {
+      headers: {
+        Authorization: "Bearer " + accessToken,
+      },
+    });
     return response.data;
   } catch (err: any) {
-    console.log(err.response.data);
     return err.response;
   }
 }
-  
-//add song to database
-async function addtoDB(track:any ,id: any) {
-  console.log(id);
 
-  let db = await Spotify.findOne({ _id: id });
-  let queue = db!.queue;
-  queue!.push({
-    song: track.name,
-    artist: track.artists[0].name,
-    duration: track.duration_ms,
-    uri: track.uri,
-    image: track.album.images[0].url,
-    addedAt: new Date(),
-  },
-  
-  );
-  await Spotify.updateOne({ _id: id }, { queue: queue });
+//add song to database
+async function addtoDB(track: any, db: any) {
+  console.log(db);
+
+  console.log("------------------------------------");
+
+  await prisma.queue.create({
+    data: {
+      addedAt: new Date(),
+      song: track.name,
+      artists: track.artists[0].name,
+      channelID: +db.twitch!.twitchID,
+      channelName: db.twitch!.displayName,
+      songID: track.id,
+      duration: track.duration_ms,
+      image: track.album.images[0].url,
+      requestedBy: db.twitch!.displayName,
+      uri: track.uri,
+      spotifyId: db.spotify!.spotifyID,
+    },
+  });
 }

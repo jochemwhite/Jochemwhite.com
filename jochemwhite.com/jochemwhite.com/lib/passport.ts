@@ -21,7 +21,6 @@ passport.use(
       done: any
     ) => {
       try {
-        console.log("--------kees-------------");
         //check if we this user in the database
         // const obj = await Twitch.findOne({ TwitchID: profile.id });
         const obj = await prisma.user.findFirst({
@@ -35,7 +34,6 @@ passport.use(
         //if we can't find the user we create it
 
         if (!obj) {
-          console.log("creating new user");
           let newUser = await prisma.user.create({
             data: {
               name: profile.display_name,
@@ -78,7 +76,6 @@ passport.use(
         }
         //if the user exist
         else {
-          console.log("editing user");
           const token = jwt.sign(
             {
               id: obj.id,
@@ -103,7 +100,7 @@ passport.use(
           done(null, obj, { message: "Auth successful", token });
         }
       } catch (err) {
-        console.log(err);
+        console.log(err)
         prisma.$disconnect();
       }
     }
@@ -127,10 +124,8 @@ passport.use(
       profile: any,
       done: any
     ) => {
-      console.log(
-        "-------------------------spotify------------------------------"
-      );
       let token = req.cookies.twitchcookie!;
+      console.log(profile);
 
       const verify = jwt.verify(token, process.env.JWT_SECRET) as any;
       try {
@@ -145,6 +140,7 @@ passport.use(
 
         if (!obj!.spotify) {
           console.log("new spotify user");
+          let spotifyID = profile.id;
           let newUser = await prisma.user.update({
             where: {
               id: obj!.id,
@@ -152,13 +148,17 @@ passport.use(
             data: {
               spotify: {
                 create: {
-                  spotifyID: +profile.id,
+                  spotifyID: spotifyID,
                   displayName: profile.displayName,
                   email: profile.emails[0].value,
                   accessToken: accessToken,
                   refreshToken: refreshToken,
                 },
               },
+            },
+            include: {
+              // twitch: true,
+              spotify: true,
             },
           });
 
@@ -182,6 +182,8 @@ passport.use(
               },
             },
           });
+          prisma.$disconnect();
+          console.log(profile);
           done(null, newUser, { message: "Auth successful", token });
         } else {
           // login existing user

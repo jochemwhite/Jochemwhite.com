@@ -1,15 +1,16 @@
 import axios, { AxiosResponse } from "axios";
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
+import { AuthContext } from "../../../../context/AuthContext";
 
 export default function Add_to_queue() {
   const [trackID, setTrackID] = React.useState("");
+  const { trackSet } = useContext(AuthContext);
 
   async function addtoQueue() {
-    console.log("add to queue");
     let res: AxiosResponse = await axios.post("/api/spotify/queue/add", {
       trackID: trackID,
       })
-    // console.log(res);
+      trackSet()
   }
 
 
